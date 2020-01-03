@@ -3,19 +3,13 @@ OpenFaaS Cloud
 
 Managed OpenFaaS for teams
 
-![https://pbs.twimg.com/media/DacWCtZVMAAJQ-u.jpg](https://pbs.twimg.com/media/DacWCtZVMAAJQ-u.jpg)
+![Conceptual diagram](/docs/ofc-github-conceptual.png)
 
-*Announcement from Cisco's DevNet Create in Mountain View*
+The high-level workflow for the OpenFaaS Cloud CI/CD pipeline.
 
-## KubeCon 2019 talk 🌮
+## Introduction
 
-Watch the latest conference talk from KubeCon:
-
-[OpenFaaS Cloud + Linkerd: A Secure, Multi-Tenant Serverless Platform - Charles Pretzer & Alex Ellis](https://www.youtube.com/watch?v=sD7hCwq3Gw0&feature=emb_title)
-
-## Description
-
-[![Build Status](https://travis-ci.org/openfaas/openfaas-cloud.svg?branch=master)](https://travis-ci.org/openfaas/openfaas-cloud)
+[![Build Status](https://travis-ci.com/openfaas/openfaas-cloud.svg?branch=master)](https://travis-ci.com/openfaas/openfaas-cloud)
 
 OpenFaaS Cloud introduces an automated build and management system for your Serverless functions with native integrations into your source-control management system whether that is GitHub or GitLab.
 
@@ -30,7 +24,7 @@ Features:
 * Immediate feedback on your personal dashboard and through GitHub Checks or GitLab Statuses
 * Sub-domain per user or organization with HTTPS
 * Runtime-logs for your functions
-* Fast, non-root image builds using Docker's buildkit
+* Fast, non-root image builds using [buildkit](https://github.com/moby/buildkit/) from Docker
 
 The dashboard page for a user:
 
@@ -40,38 +34,36 @@ The details page for a function:
 
 ![Details page](/docs/details.png)
 
-### Requirements
+## Overview
 
-* OpenFaaS (0.9.10 or greater is recommended)
-* Docker Swarm or Kubernetes
+### KubeCon video
 
-> Note: other OpenFaaS providers may work, but have not been tested
+[![](http://img.youtube.com/vi/sD7hCwq3Gw0/maxresdefault.jpg)](https://www.youtube.com/watch?v=sD7hCwq3Gw0)
 
-## Blog post
+[KubeCon: OpenFaaS Cloud + Linkerd: A Secure, Multi-Tenant Serverless Platform - Charles Pretzer & Alex Ellis](https://www.youtube.com/watch?v=sD7hCwq3Gw0&feature=emb_title)
 
-Read my [introducing OpenFaaS Cloud](https://blog.alexellis.io/introducing-openfaas-cloud/) blog post for an overview of the idea with examples, screenshots and background on the project.
+### Blog posts
 
-## Conceptual architecture diagram
+* [Build your own OpenFaaS Cloud with AWS EKS](https://www.openfaas.com/blog/eks-openfaas-cloud-build-guide/)
+* [Introducing OpenFaaS Cloud with GitLab](https://www.openfaas.com/blog/openfaas-cloud-gitlab/)
+* [Introducing OpenFaaS Cloud](https://blog.alexellis.io/introducing-openfaas-cloud/)
+* [Sailing through the Serverless Ocean with Spotinst & OpenFaaS Cloud](https://spotinst.com/blog/sailing-through-the-serverless-ocean-with-openfaas-cloud/)
 
-This conceptual diagram shows how OpenFaaS Cloud integrates with GitHub/GitLab through the use of an event-driven architecture.
+### Documentation
 
-Main flows:
+* [Conceptual architecture](https://docs.openfaas.com/openfaas-cloud/architecture).
+* [Authentication](https://docs.openfaas.com/openfaas-cloud/authentication/)
+* [Multi-stage environments](https://docs.openfaas.com/openfaas-cloud/multi-stage/)
+* [Manage secrets](https://docs.openfaas.com/openfaas-cloud/secrets/)
+* [User guide](https://docs.openfaas.com/openfaas-cloud/user-guide/)
 
-1. User pushes code - GitHub/GitLab push event is sent to github-event/gitlab-event function triggering a CI/CD workflow
-2. User removes GitHub/GitLab app from one or more repos - garbage collection is invoked removing 1-many functions
-3. User accesses function via router using "pretty URL" format and request is routed to function via API Gateway
-
-![](./docs/conceptual-overview.png)
-
-See also: [COMPONENTS.md](docs/COMPONENTS.md) for detailed information on each component.
-
-## Roadmap & Features
+### Roadmap & Features
 
 See the [Roadmap & Features](docs/ROADMAP.md)
 
 ## Get started
 
-You can set up and host your own *OpenFaaS Cloud* or contact alex@openfaas.com for instructions on how to participate in a public trial of a fully-hosted service (a.k.a. Community Cluster).
+You can set up and host your own *OpenFaaS Cloud* or apply for access to the hosted Community Cluster.
 
 ### Option 1: Automated deployment (self-hosted)
 
@@ -95,5 +87,5 @@ Read the [developer's guide](docs/README.md) to find out more about the function
 
 ## Getting help
 
-For help join #openfaas-cloud on the [OpenFaaS Slack workspace](https://docs.openfaas.com/community).
+For help join #openfaas-cloud on the [OpenFaaS Slack workspace](https://docs.openfaas.com/community). If you need commercial support, contact [sales@openfaas.com](mailto:sales@openfaas.com)
 
