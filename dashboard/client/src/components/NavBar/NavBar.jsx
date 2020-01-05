@@ -81,28 +81,18 @@ class NavBarWithRouter extends Component {
         <NavbarBrand href="/" className="font-size-0-important margin-0-important p-0 pl-2">
           <img
             alt="OpenFaaS"
-            src="https://docs.openfaas.com/images/logo.svg"
+            src="https://cloudux.io/img/cloudux-icon-00.9ec9e5cd.svg"
           />
         </NavbarBrand>
         <a
-          href="https://docs.openfaas.com/openfaas-cloud/intro"
           className="color-white py-3 px-2"
         >
-          OpenFaaS Cloud
+          Cloudux FaaS
         </a>
         <NavbarToggler className="mr-2" onClick={this.toggle} />
         <Collapse isOpen={this.state.isActive} navbar>
           <Nav navbar>
             { this.createNavLink(pathname, user, 'Home') }
-            <NavItem>
-              <NavLink
-                className="py-3 px-3 px-md-2"
-                href="https://github.com/openfaas/openfaas-cloud"
-              >
-                <FontAwesomeIcon icon={faGithub} className="mr-1" />
-                GitHub
-              </NavLink>
-            </NavItem>
           </Nav>
           <Nav navbar className="ml-auto">
             { this.isLoggedIn() && this.createNavLink(
