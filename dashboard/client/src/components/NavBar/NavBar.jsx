@@ -80,7 +80,7 @@ class NavBarWithRouter extends Component {
       >
         <NavbarBrand href="/" className="font-size-0-important margin-0-important p-0 pl-2">
           <img
-            alt="OpenFaaS"
+            alt="Cloudux FaaS"
             src="https://cloudux.io/img/cloudux-icon-00.9ec9e5cd.svg"
           />
         </NavbarBrand>
