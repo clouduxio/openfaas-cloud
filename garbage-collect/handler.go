@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/alexellis/hmac"
 	"github.com/openfaas/openfaas-cloud/sdk"
@@ -45,7 +44,12 @@ func Handle(req []byte) string {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Functions owned by %s:\n %s", owner, deployedFunctions)
+	deployedList := ""
+	for _, fn := range deployedFunctions {
+		deployedList += fn.GetOwner() + "/" + fn.GetRepo() + ", "
+	}
+
+	log.Printf("Functions owned by %s:\n %s", owner, strings.Trim(deployedList, ", "))
 
 	deleted := 0
 	for _, fn := range deployedFunctions {
@@ -110,11 +114,8 @@ func included(fn *openFaaSFunction, owner string, functionStack []string) bool {
 
 func deleteFunction(target, gatewayURL string) error {
 	var err error
-	fmt.Println("Delete ", target)
+	log.Printf("Deleting: %s", target)
 
-	c := http.Client{
-		Timeout: time.Second * 3,
-	}
 	delReq := struct {
 		FunctionName string
 	}{
@@ -127,19 +128,21 @@ func deleteFunction(target, gatewayURL string) error {
 
 	addAuthErr := sdk.AddBasicAuth(httpReq)
 	if addAuthErr != nil {
-		log.Printf("Basic auth error %s", addAuthErr)
+		log.Printf("Basic auth error: %s", addAuthErr)
+		return addAuthErr
 	}
 
-	response, err := c.Do(httpReq)
+	response, err := http.DefaultClient.Do(httpReq)
 
 	if err == nil {
-		defer response.Body.Close()
 		if response.Body != nil {
+			defer response.Body.Close()
+
 			bodyBytes, bErr := ioutil.ReadAll(response.Body)
 			if bErr != nil {
 				log.Fatal(bErr)
 			}
-			log.Println(string(bodyBytes))
+			log.Println("Delete response:", string(bodyBytes))
 		}
 	}
 
@@ -150,18 +153,14 @@ func listFunctions(owner, gatewayURL string) ([]openFaaSFunction, error) {
 
 	var err error
 
-	c := http.Client{
-		Timeout: time.Second * 3,
-	}
-
 	request, _ := http.NewRequest(http.MethodGet, gatewayURL+"/function/list-functions?user="+owner, nil)
 
-	response, err := c.Do(request)
+	response, err := http.DefaultClient.Do(request)
 
 	if err == nil {
-		defer response.Body.Close()
-
 		if response.Body != nil {
+			defer response.Body.Close()
+
 			bodyBytes, bErr := ioutil.ReadAll(response.Body)
 			if bErr != nil {
 				log.Fatal(bErr)

@@ -27,9 +27,12 @@ spec:
         - name: of-client-secret
           secret:
             secretName: of-client-secret
+        - name: of-customers
+          secret:
+            secretName: of-customers
       containers:
       - name: edge-auth
-        image: openfaas/edge-auth:0.6.3
+        image: openfaas/edge-auth:0.7.1
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -47,6 +50,8 @@ spec:
             value: "/var/secrets/public/key.pub"
           - name: private_key_path
             value: "/var/secrets/private/key"
+          - name: customers_path
+            value: "/var/secrets/of-customers/of-customers"
 # Update for your configuration:
           - name: client_secret # this can also be provided via a secret named of-client-secret
             value: ""
@@ -68,7 +73,7 @@ spec:
           - name: cookie_root_domain
             value: ".system.o6s.io"
 
-# This is a default and can be overriden
+# This is a default and can be overridden
           - name: customers_url
             value: "https://raw.githubusercontent.com/openfaas/openfaas-cloud/master/CUSTOMERS"
 
@@ -88,4 +93,6 @@ spec:
         - name: of-client-secret
           readOnly: true
           mountPath: "/var/secrets/of-client-secret"
-
+        - name: of-customers
+          readOnly: true
+          mountPath: "/var/secrets/of-customers"

@@ -30,9 +30,7 @@ const (
 // Handle clones the git repo and checks out the SHA then uses the
 // OpenFaaS CLI to shrinkwrap a tarball to be build with Docker
 func Handle(req []byte) []byte {
-
 	start := time.Now()
-
 	shouldValidate := os.Getenv("validate_hmac")
 
 	payloadSecret, secretErr := sdk.ReadSecret("payload-secret")
@@ -64,6 +62,7 @@ func Handle(req []byte) []byte {
 
 	if getStackFileErr != nil {
 		msg := fmt.Sprintf("cannot fetch stack file %s", getStackFileErr.Error())
+		log.Println(msg)
 
 		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
@@ -71,19 +70,21 @@ func Handle(req []byte) []byte {
 			log.Printf(statusErr.Error())
 		}
 
-		log.Printf(msg)
 		os.Exit(-1)
 	}
 
 	if !hasStackFile {
-		status.AddStatus(sdk.StatusFailure, "unable to find stack.yml", sdk.StackContext)
+		msg := "unable to find stack.yml"
+		log.Println(msg)
+
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
 		}
 
 		auditEvent := sdk.AuditEvent{
-			Message: "no stack.yml file found",
+			Message: msg,
 			Owner:   pushEvent.Repository.Owner.Login,
 			Repo:    pushEvent.Repository.Name,
 			Source:  Source,
@@ -93,10 +94,13 @@ func Handle(req []byte) []byte {
 		os.Exit(-1)
 	}
 
-	clonePath, err := clone(pushEvent)
+	fetcher := GitRepoFetcher{}
+	clonePath, err := clone(fetcher, pushEvent)
 	if err != nil {
-		log.Println("Clone ", err.Error())
-		status.AddStatus(sdk.StatusFailure, "clone error : "+err.Error(), sdk.StackContext)
+		msg := fmt.Sprintf("error cloning repo: %s ", err.Error())
+		log.Println(msg)
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
+
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
@@ -105,8 +109,9 @@ func Handle(req []byte) []byte {
 	}
 
 	if _, err := os.Stat(path.Join(clonePath, "template")); err == nil {
-		log.Println("Post clone check found a user-generated template folder")
-		status.AddStatus(sdk.StatusFailure, "remove custom 'templates' folder", sdk.StackContext)
+		msg := `unsupported custom "templates" folder`
+		log.Println(msg)
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
@@ -136,8 +141,10 @@ func Handle(req []byte) []byte {
 
 	err = fetchTemplates(clonePath)
 	if err != nil {
-		log.Println("Error fetching templates ", err.Error())
-		status.AddStatus(sdk.StatusFailure, "fetchTemplates error : "+err.Error(), sdk.StackContext)
+		msg := fmt.Sprintf("error fetching templates: %s", err.Error())
+		log.Println(msg)
+
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
@@ -147,8 +154,10 @@ func Handle(req []byte) []byte {
 
 	err = checkCompatibleTemplates(stack, clonePath)
 	if err != nil {
-		log.Println("Error while checking available templates:", err.Error())
-		status.AddStatus(sdk.StatusFailure, "missing language template error : "+err.Error(), sdk.StackContext)
+		msg := fmt.Sprintf("missing language template: %s", err.Error())
+		log.Println(msg)
+
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
@@ -159,8 +168,10 @@ func Handle(req []byte) []byte {
 	var shrinkWrapPath string
 	shrinkWrapPath, err = shrinkwrap(clonePath)
 	if err != nil {
-		log.Println("Shrinkwrap ", err.Error())
-		status.AddStatus(sdk.StatusFailure, "shrinkwrap error : "+err.Error(), sdk.StackContext)
+		msg := fmt.Sprintf("cannot shrinkwrap: %s", err.Error())
+		log.Println(msg)
+
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
@@ -171,8 +182,10 @@ func Handle(req []byte) []byte {
 	var tars []tarEntry
 	tars, err = makeTar(pushEvent, shrinkWrapPath, stack)
 	if err != nil {
-		log.Println("Error creating tar(s): ", err.Error())
-		status.AddStatus(sdk.StatusFailure, "tar(s) creation failed, error : "+err.Error(), sdk.StackContext)
+		msg := fmt.Sprintf("cannot create tar(s): %s", err.Error())
+		log.Println(msg)
+
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
@@ -182,8 +195,10 @@ func Handle(req []byte) []byte {
 
 	err = importSecrets(pushEvent, stack, clonePath)
 	if err != nil {
-		log.Printf("Error parsing secrets: %s\n", err.Error())
-		status.AddStatus(sdk.StatusFailure, "failed to parse secrets, error : "+err.Error(), sdk.StackContext)
+		msg := fmt.Sprintf("cannot parse secrets: %s", err.Error())
+		log.Println(msg)
+
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
@@ -193,22 +208,28 @@ func Handle(req []byte) []byte {
 
 	err = deploy(tars, pushEvent, stack, status, payloadSecret)
 	if err != nil {
-		status.AddStatus(sdk.StatusFailure, "deploy failed, error : "+err.Error(), sdk.StackContext)
+		msg := fmt.Sprintf("deploy failed: %s", err.Error())
+		log.Println(msg)
+
+		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
+
 		statusErr := reportStatus(status, pushEvent.SCM)
 		if statusErr != nil {
 			log.Printf(statusErr.Error())
 		}
-		log.Printf("deploy error: %s", err)
+
 		os.Exit(-1)
 	}
+
 	status.AddStatus(sdk.StatusSuccess, "stack is successfully deployed", sdk.StackContext)
 	statusErr := reportStatus(status, pushEvent.SCM)
 	if statusErr != nil {
 		log.Printf(statusErr.Error())
 	}
-	err = collect(pushEvent, stack)
+
+	err = garbageCollect(pushEvent, stack)
 	if err != nil {
-		log.Printf("collect error: %s", err)
+		log.Printf("garbage-collect error: %s", err)
 	}
 
 	completed := time.Since(start)
@@ -218,7 +239,7 @@ func Handle(req []byte) []byte {
 		tarMsg += fmt.Sprintf("%s @ %s, ", tar.functionName, tar.imageName)
 	}
 
-	deploymentMessage := fmt.Sprintf("Deployed: %s. Took %s", strings.TrimRight(tarMsg, ", "), completed.String())
+	deploymentMessage := fmt.Sprintf("Deployed: %s, time taken: %.2fs", strings.TrimRight(tarMsg, ", "), completed.Seconds())
 
 	auditEvent := sdk.AuditEvent{
 		Message: deploymentMessage,
@@ -228,10 +249,10 @@ func Handle(req []byte) []byte {
 	}
 	sdk.PostAudit(auditEvent)
 
-	return []byte(deploymentMessage)
+	return []byte(deploymentMessage + "\n")
 }
 
-func collect(pushEvent sdk.PushEvent, stack *stack.Services) error {
+func garbageCollect(pushEvent sdk.PushEvent, stack *stack.Services) error {
 	var err error
 
 	gatewayURL := os.Getenv("gateway_url")

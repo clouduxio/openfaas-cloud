@@ -37,7 +37,7 @@ curl -H "Host: alexellis.domain.io" localhost:8081/kubecon-tester
 ### Development
 
 ```sh
-TAG=0.7.4 make build push
+TAG=0.7.5 make build push
 ```
 
 > Note: on Kubernetes change `gateway:8080` to `gateway.openfaas:8080`.
